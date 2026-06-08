@@ -147,7 +147,6 @@ class MainActivity : AppCompatActivity() {
         tvTotalAmount.text = "Общая сумма: $totalSumStr"
         tvPerPerson.text = "На каждого: $perPersonStr"
     }
-
     private fun showError(message: String) {
         Toast.makeText(this, message, Toast.LENGTH_LONG).show()
     }
