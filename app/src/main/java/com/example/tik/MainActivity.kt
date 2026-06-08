@@ -1,5 +1,7 @@
 package com.example.tik
 
+import android.text.InputFilter
+import android.text.Spanned
 import android.os.Bundle
 import android.widget.*
 import androidx.appcompat.app.AppCompatActivity
@@ -27,6 +29,7 @@ class MainActivity : AppCompatActivity() {
         setContentView(R.layout.activity_main)
 
         etBillAmount = findViewById(R.id.etBillAmount)
+        etBillAmount.filters = arrayOf(DecimalDigitsInputFilter(7, 2))
         etTipPercent = findViewById(R.id.etTipPercent)
         etPeopleCount = findViewById(R.id.etPeopleCount)
         rgRounding = findViewById(R.id.rgRounding)
@@ -43,8 +46,28 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
+    class DecimalDigitsInputFilter(private val digitsBeforeZero: Int, private val digitsAfterZero: Int) : InputFilter {
+        private val pattern = Regex("^[0-9]{0,$digitsBeforeZero}(\\.[0-9]{0,$digitsAfterZero})?\$")
+
+        override fun filter(
+            source: CharSequence?,
+            start: Int,
+            end: Int,
+            dest: Spanned?,
+            dstart: Int,
+            dend: Int
+        ): CharSequence? {
+            val newText = dest?.toString()?.substring(0, dstart) + source?.subSequence(start, end) + dest?.toString()
+                ?.substring(dend)
+            if (newText.matches(pattern)) {
+                return null
+            }
+            return ""
+        }
+    }
+
     private fun calculateTips() {
-        // Получение и проверка данных
+
         val billStr = etBillAmount.text.toString()
         val tipStr = etTipPercent.text.toString()
         val peopleStr = etPeopleCount.text.toString()
@@ -53,7 +76,6 @@ class MainActivity : AppCompatActivity() {
         var tipPercent: Int
         var peopleCount: Int
 
-        // Проверка суммы счета
         if (billStr.isBlank()) {
             showError("Пожалуйста, введите сумму счета.")
             return
@@ -69,9 +91,8 @@ class MainActivity : AppCompatActivity() {
             return
         }
 
-        // Проверка процента чаевых
         if (tipStr.isBlank()) {
-            tipPercent = 15 // по умолчанию
+            tipPercent = 15
         } else {
             try {
                 tipPercent = tipStr.toInt()
@@ -85,9 +106,8 @@ class MainActivity : AppCompatActivity() {
             }
         }
 
-        // Проверка количества человек
         if (peopleStr.isBlank()) {
-            peopleCount = 1 // по умолчанию
+            peopleCount = 1
         } else {
             try {
                 peopleCount = peopleStr.toInt()
@@ -101,10 +121,8 @@ class MainActivity : AppCompatActivity() {
             }
         }
 
-        // Расчет чаевых
         val tipRaw = billAmount * tipPercent / 100.0
 
-        // Округление
         val selectedId = rgRounding.checkedRadioButtonId
         val roundedTip = when (selectedId) {
             R.id.rbDown -> floor(tipRaw)
@@ -113,16 +131,13 @@ class MainActivity : AppCompatActivity() {
             else -> round(tipRaw)
         }
 
-        // Форматирование результата
         val tipStrFormatted = String.format("%.2f", roundedTip)
         val totalSum = billAmount + roundedTip
         val totalSumStr = String.format("%.2f", totalSum)
         val perPerson = totalSum / peopleCount
         val perPersonStr = String.format("%.2f", perPerson)
 
-        // Отображение результатов
         val tipDisplay = if (selectedId == R.id.rbNearest) {
-            // если округление до целого, показываем с двумя нулями
             String.format("%.2f", roundedTip)
         } else {
             tipStrFormatted
